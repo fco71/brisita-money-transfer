@@ -1,0 +1,22 @@
+{
+  "name": "brisita-money-transfer",
+  "version": "0.1.0",
+  "description": "MVP for blockchain-powered international money transfer app",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx http-server -p 8080 -o",
+    "deploy": "firebase deploy"
+  },
+  "keywords": [
+    "firebase",
+    "blockchain",
+    "money-transfer",
+    "fintech",
+    "cryptocurrency"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  }
+}
