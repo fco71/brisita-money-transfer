@@ -5,90 +5,166 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Brisita - International Money Transfer</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="container">
+    <div class="app-wrapper">
         <!-- Header -->
-        <header>
-            <div class="logo">
-                <h1>💸 Brisita</h1>
-                <p class="tagline">Blockchain-Powered International Transfers</p>
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                        <rect width="32" height="32" rx="8" fill="url(#gradient)"/>
+                        <path d="M16 8L22 14L16 20L10 14L16 8Z" fill="white"/>
+                        <path d="M16 12L19 15L16 18L13 15L16 12Z" fill="#6366f1" opacity="0.5"/>
+                        <defs>
+                            <linearGradient id="gradient" x1="0" y1="0" x2="32" y2="32">
+                                <stop offset="0%" stop-color="#6366f1"/>
+                                <stop offset="100%" stop-color="#8b5cf6"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                    <span class="brand-name">Brisita</span>
+                </div>
+                <nav id="auth-nav">
+                    <button id="login-btn" class="btn-text">Sign In</button>
+                    <button id="signup-btn" class="btn-primary">Get Started</button>
+                    <div id="user-menu" style="display: none;">
+                        <span id="user-avatar"></span>
+                        <button id="logout-btn" class="btn-text">Sign Out</button>
+                    </div>
+                </nav>
             </div>
-            <nav id="auth-nav">
-                <button id="login-btn" class="btn-secondary">Login</button>
-                <button id="signup-btn" class="btn-primary">Sign Up</button>
-                <button id="logout-btn" class="btn-secondary" style="display: none;">Logout</button>
-            </nav>
         </header>
 
         <!-- Auth Section -->
         <div id="auth-section" class="auth-section">
-            <div class="auth-container">
-                <h2 id="auth-title">Welcome to Brisita</h2>
-                <form id="auth-form">
-                    <input type="email" id="email" placeholder="Email" required>
-                    <input type="password" id="password" placeholder="Password" required>
-                    <button type="submit" class="btn-primary" id="auth-submit">Sign Up</button>
-                </form>
-                <p class="auth-toggle">
-                    <span id="toggle-text">Already have an account?</span>
-                    <a href="#" id="toggle-auth">Login</a>
-                </p>
+            <div class="auth-content">
+                <div class="auth-hero">
+                    <h1>Send money globally with blockchain security</h1>
+                    <p>Fast, secure, and transparent international transfers powered by cutting-edge blockchain technology.</p>
+                    <div class="features-grid">
+                        <div class="feature">
+                            <div class="feature-icon">⚡</div>
+                            <h3>Instant</h3>
+                            <p>Transfers in minutes</p>
+                        </div>
+                        <div class="feature">
+                            <div class="feature-icon">🔒</div>
+                            <h3>Secure</h3>
+                            <p>Blockchain protected</p>
+                        </div>
+                        <div class="feature">
+                            <div class="feature-icon">💰</div>
+                            <h3>Low Fees</h3>
+                            <p>Transparent pricing</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="auth-card">
+                    <h2 id="auth-title">Get Started</h2>
+                    <p class="auth-subtitle">Create your account to start sending money</p>
+                    <form id="auth-form">
+                        <div class="input-group">
+                            <label for="email">Email</label>
+                            <input type="email" id="email" placeholder="you@example.com" required>
+                        </div>
+                        <div class="input-group">
+                            <label for="password">Password</label>
+                            <input type="password" id="password" placeholder="••••••••" required>
+                        </div>
+                        <button type="submit" class="btn-primary btn-large" id="auth-submit">Create Account</button>
+                    </form>
+                    <p class="auth-toggle">
+                        <span id="toggle-text">Already have an account?</span>
+                        <a href="#" id="toggle-auth">Sign in</a>
+                    </p>
+                </div>
             </div>
         </div>
 
         <!-- Main App Section -->
-        <div id="app-section" style="display: none;">
-            <!-- User Dashboard -->
-            <section class="dashboard">
-                <div class="user-info">
-                    <h2>Welcome, <span id="user-email"></span></h2>
-                    <p>Account Balance: <strong id="balance">$0.00 USD</strong></p>
+        <div id="app-section" class="main-app" style="display: none;">
+            <!-- Dashboard Header -->
+            <section class="dashboard-header">
+                <div class="balance-card">
+                    <p class="balance-label">Available Balance</p>
+                    <h1 id="balance" class="balance-amount">$0.00</h1>
+                    <p class="balance-currency">USD</p>
+                </div>
+                <div class="quick-stats">
+                    <div class="stat">
+                        <span class="stat-label">This Month</span>
+                        <span class="stat-value">$0.00</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Transactions</span>
+                        <span class="stat-value" id="tx-count">0</span>
+                    </div>
                 </div>
             </section>
 
             <!-- Transfer Form -->
-            <section class="transfer-section">
-                <h2>Send Money Internationally</h2>
+            <section class="transfer-card">
+                <h2 class="section-title">Send Money</h2>
                 <form id="transfer-form">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="from-currency">From</label>
-                            <select id="from-currency" required>
-                                <option value="USD">USD - US Dollar</option>
-                                <option value="EUR">EUR - Euro</option>
-                                <option value="GBP">GBP - British Pound</option>
-                                <option value="JPY">JPY - Japanese Yen</option>
-                                <option value="CAD">CAD - Canadian Dollar</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="to-currency">To</label>
-                            <select id="to-currency" required>
-                                <option value="EUR">EUR - Euro</option>
-                                <option value="USD">USD - US Dollar</option>
-                                <option value="GBP">GBP - British Pound</option>
-                                <option value="JPY">JPY - Japanese Yen</option>
-                                <option value="MXN">MXN - Mexican Peso</option>
+                    <div class="amount-input-wrapper">
+                        <label for="amount">Amount to Send</label>
+                        <div class="amount-input">
+                            <span class="currency-symbol">$</span>
+                            <input type="number" id="amount" placeholder="0.00" step="0.01" min="0" required>
+                            <select id="from-currency" class="currency-select" required>
+                                <option value="USD">USD</option>
+                                <option value="EUR">EUR</option>
+                                <option value="GBP">GBP</option>
+                                <option value="JPY">JPY</option>
+                                <option value="CAD">CAD</option>
                             </select>
                         </div>
                     </div>
 
-                    <div class="form-group">
-                        <label for="amount">Amount</label>
-                        <input type="number" id="amount" placeholder="0.00" step="0.01" min="0" required>
+                    <div class="exchange-display">
+                        <div class="exchange-icon">⇅</div>
+                        <div class="exchange-details">
+                            <span class="exchange-label">Exchange rate</span>
+                            <span id="exchange-rate" class="exchange-value">1.00</span>
+                        </div>
                     </div>
 
-                    <div class="form-group">
+                    <div class="recipient-input-wrapper">
+                        <label for="to-currency">Recipient Gets</label>
+                        <div class="recipient-input">
+                            <span id="receive-amount" class="receive-amount">0.00</span>
+                            <select id="to-currency" class="currency-select" required>
+                                <option value="EUR">EUR</option>
+                                <option value="USD">USD</option>
+                                <option value="GBP">GBP</option>
+                                <option value="JPY">JPY</option>
+                                <option value="MXN">MXN</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
                         <label for="recipient-address">Recipient Wallet Address</label>
-                        <input type="text" id="recipient-address" placeholder="0x..." required>
+                        <input type="text" id="recipient-address" placeholder="0x1234..." required>
                     </div>
 
-                    <div class="exchange-info">
-                        <p>Exchange Rate: <strong id="exchange-rate">1.00</strong></p>
-                        <p>You send: <strong id="send-amount">$0.00</strong></p>
-                        <p>Recipient gets: <strong id="receive-amount">€0.00</strong></p>
-                        <p class="blockchain-fee">Blockchain Fee: <strong id="blockchain-fee">~$2.50</strong></p>
+                    <div class="fee-summary">
+                        <div class="fee-row">
+                            <span>Amount</span>
+                            <span id="send-amount">$0.00</span>
+                        </div>
+                        <div class="fee-row">
+                            <span>Blockchain Fee</span>
+                            <span id="blockchain-fee">$2.50</span>
+                        </div>
+                        <div class="fee-row total">
+                            <span>Total</span>
+                            <span id="total-amount">$2.50</span>
+                        </div>
                     </div>
 
                     <button type="submit" class="btn-primary btn-large">Send Money</button>
@@ -97,9 +173,16 @@
 
             <!-- Transaction History -->
             <section class="history-section">
-                <h2>Transaction History</h2>
+                <h2 class="section-title">Recent Transactions</h2>
                 <div id="transaction-list" class="transaction-list">
-                    <p class="no-transactions">No transactions yet</p>
+                    <div class="no-transactions">
+                        <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+                            <circle cx="32" cy="32" r="32" fill="#f3f4f6"/>
+                            <path d="M32 20v24M20 32h24" stroke="#9ca3af" stroke-width="3" stroke-linecap="round"/>
+                        </svg>
+                        <p>No transactions yet</p>
+                        <span>Your transfer history will appear here</span>
+                    </div>
                 </div>
             </section>
         </div>

@@ -1,0 +1,24 @@
+mutation CreateBeneficiary($userId: UUID!, $accountNumber: String, $address: String, $bankName: String, $country: String!, $currency: String!, $email: String, $firstName: String!, $lastName: String!, $phoneNumber: String, $swiftCode: String) @auth(level: USER) {
+  beneficiary_insert(data: {userId: $userId, accountNumber: $accountNumber, address: $address, bankName: $bankName, country: $country, currency: $currency, email: $email, firstName: $firstName, lastName: $lastName, phoneNumber: $phoneNumber, swiftCode: $swiftCode})
+}
+
+query ListBeneficiaries @auth(level: USER, insecureReason: "This operation is safe to expose to all logged in users.") {
+  beneficiaries {
+    id
+    firstName
+    lastName
+    country
+    currency
+  }
+}
+
+mutation UpdateTransferStatus($id: UUID!, $status: String!) @auth(level: USER) {
+  transfer_update(id: $id, data: {status: $status})
+}
+
+query GetExchangeRate($baseCurrency: String!, $targetCurrency: String!) @auth(level: PUBLIC, insecureReason: "This operation is safe to expose to the public") {
+  exchangeRates(where: {baseCurrency: {eq: $baseCurrency}, targetCurrency: {eq: $targetCurrency}}) {
+    rate
+    timestamp
+  }
+}

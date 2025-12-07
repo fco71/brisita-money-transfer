@@ -9,14 +9,17 @@ const authForm = document.getElementById('auth-form');
 const loginBtn = document.getElementById('login-btn');
 const signupBtn = document.getElementById('signup-btn');
 const logoutBtn = document.getElementById('logout-btn');
+const userMenu = document.getElementById('user-menu');
+const userAvatar = document.getElementById('user-avatar');
 const toggleAuth = document.getElementById('toggle-auth');
 const authTitle = document.getElementById('auth-title');
 const authSubmit = document.getElementById('auth-submit');
 const toggleText = document.getElementById('toggle-text');
 const transferForm = document.getElementById('transfer-form');
-const userEmailSpan = document.getElementById('user-email');
 const balanceSpan = document.getElementById('balance');
+const txCountSpan = document.getElementById('tx-count');
 const transactionList = document.getElementById('transaction-list');
+const totalAmountSpan = document.getElementById('total-amount');
 
 // Exchange rate calculation
 const fromCurrencySelect = document.getElementById('from-currency');
@@ -53,15 +56,15 @@ auth.onAuthStateChanged((user) => {
 function toggleAuthMode() {
     isLoginMode = !isLoginMode;
     if (isLoginMode) {
-        authTitle.textContent = 'Login to Brisita';
-        authSubmit.textContent = 'Login';
+        authTitle.textContent = 'Welcome Back';
+        authSubmit.textContent = 'Sign In';
         toggleText.textContent = "Don't have an account?";
-        toggleAuth.textContent = 'Sign Up';
+        toggleAuth.textContent = 'Get Started';
     } else {
-        authTitle.textContent = 'Welcome to Brisita';
-        authSubmit.textContent = 'Sign Up';
+        authTitle.textContent = 'Get Started';
+        authSubmit.textContent = 'Create Account';
         toggleText.textContent = 'Already have an account?';
-        toggleAuth.textContent = 'Login';
+        toggleAuth.textContent = 'Sign in';
     }
 }
 
@@ -190,10 +193,13 @@ function updateExchangeCalculation() {
     const amount = parseFloat(amountInput.value) || 0;
     const rate = exchangeRates[fromCurrency][toCurrency];
     const receiveAmount = amount * rate;
+    const blockchainFee = 2.50;
+    const total = amount + blockchainFee;
 
     exchangeRateSpan.textContent = rate.toFixed(4);
-    sendAmountSpan.textContent = `${amount.toFixed(2)} ${fromCurrency}`;
-    receiveAmountSpan.textContent = `${receiveAmount.toFixed(2)} ${toCurrency}`;
+    sendAmountSpan.textContent = `$${amount.toFixed(2)}`;
+    receiveAmountSpan.textContent = `${receiveAmount.toFixed(2)}`;
+    totalAmountSpan.textContent = `$${total.toFixed(2)}`;
 }
 
 fromCurrencySelect.addEventListener('change', updateExchangeCalculation);
@@ -202,11 +208,11 @@ amountInput.addEventListener('input', updateExchangeCalculation);
 
 // Show/Hide sections
 function showAuth() {
-    authSection.style.display = 'block';
+    authSection.style.display = 'flex';
     appSection.style.display = 'none';
     loginBtn.style.display = 'inline-block';
     signupBtn.style.display = 'inline-block';
-    logoutBtn.style.display = 'none';
+    userMenu.style.display = 'none';
 }
 
 function showApp() {
@@ -214,7 +220,7 @@ function showApp() {
     appSection.style.display = 'block';
     loginBtn.style.display = 'none';
     signupBtn.style.display = 'none';
-    logoutBtn.style.display = 'inline-block';
+    userMenu.style.display = 'flex';
 }
 
 // Load user data
@@ -225,8 +231,9 @@ async function loadUserData() {
         const userDoc = await db.collection('users').doc(currentUser.uid).get();
         if (userDoc.exists) {
             const userData = userDoc.data();
-            userEmailSpan.textContent = userData.email;
-            balanceSpan.textContent = `$${userData.balance.toFixed(2)} ${userData.currency}`;
+            const email = userData.email;
+            userAvatar.textContent = email.charAt(0).toUpperCase();
+            balanceSpan.textContent = `$${userData.balance.toFixed(2)}`;
         }
     } catch (error) {
         console.error('Error loading user data:', error);
@@ -245,11 +252,22 @@ async function loadTransactions() {
             .get();
 
         if (snapshot.empty) {
-            transactionList.innerHTML = '<p class="no-transactions">No transactions yet</p>';
+            transactionList.innerHTML = `
+                <div class="no-transactions">
+                    <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+                        <circle cx="32" cy="32" r="32" fill="#f3f4f6"/>
+                        <path d="M32 20v24M20 32h24" stroke="#9ca3af" stroke-width="3" stroke-linecap="round"/>
+                    </svg>
+                    <p>No transactions yet</p>
+                    <span>Your transfer history will appear here</span>
+                </div>
+            `;
+            txCountSpan.textContent = '0';
             return;
         }
 
         transactionList.innerHTML = '';
+        txCountSpan.textContent = snapshot.size;
         snapshot.forEach((doc) => {
             const tx = doc.data();
             const txElement = createTransactionElement(tx);
@@ -257,7 +275,7 @@ async function loadTransactions() {
         });
     } catch (error) {
         console.error('Error loading transactions:', error);
-        transactionList.innerHTML = '<p class="no-transactions">Error loading transactions</p>';
+        transactionList.innerHTML = '<div class="no-transactions"><p>Error loading transactions</p></div>';
     }
 }
 
@@ -266,18 +284,24 @@ function createTransactionElement(tx) {
     const div = document.createElement('div');
     div.className = `transaction-item ${tx.status}`;
     
-    const date = tx.timestamp ? tx.timestamp.toDate().toLocaleDateString() : 'Pending';
+    const date = tx.timestamp ? tx.timestamp.toDate().toLocaleString('en-US', { 
+        month: 'short', 
+        day: 'numeric', 
+        hour: '2-digit', 
+        minute: '2-digit' 
+    }) : 'Pending';
     const statusIcon = tx.status === 'completed' ? '✓' : '⏱';
     
     div.innerHTML = `
+        <div class="transaction-icon">${statusIcon}</div>
         <div class="transaction-info">
-            <h4>${statusIcon} ${tx.fromCurrency} → ${tx.toCurrency}</h4>
-            <p>${date} | To: ${tx.recipientAddress.substring(0, 10)}...</p>
-            <p class="transaction-status">Status: ${tx.status} ${tx.blockchainTxHash !== 'pending' ? '| Hash: ' + tx.blockchainTxHash.substring(0, 10) + '...' : ''}</p>
+            <h4>${tx.fromCurrency} → ${tx.toCurrency}</h4>
+            <p>${date}</p>
+            <p class="transaction-status">To: ${tx.recipientAddress.substring(0, 12)}...</p>
         </div>
         <div class="transaction-amount">
-            <div>-${tx.sendAmount.toFixed(2)} ${tx.fromCurrency}</div>
-            <div style="font-size: 0.9rem; color: var(--success-color);">+${tx.receiveAmount.toFixed(2)} ${tx.toCurrency}</div>
+            <div class="transaction-amount-sent">-${tx.sendAmount.toFixed(2)} ${tx.fromCurrency}</div>
+            <div class="transaction-amount-received">+${tx.receiveAmount.toFixed(2)} ${tx.toCurrency}</div>
         </div>
     `;
     

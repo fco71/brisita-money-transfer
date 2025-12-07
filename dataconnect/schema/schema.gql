@@ -1,0 +1,60 @@
+type User @table {
+  firstName: String!
+  lastName: String!
+  email: String!
+  passwordHash: String!
+  createdAt: Timestamp!
+  phoneNumber: String
+  address: String
+  dateOfBirth: Date
+  countryOfResidence: String
+}
+
+type Account @table {
+  user: User!
+  accountType: String!
+  accountNumber: String!
+  currency: String!
+  createdAt: Timestamp!
+  bankName: String
+  routingNumber: String
+  cardExpirationDate: String
+  cardHolderName: String
+}
+
+type Beneficiary @table {
+  user: User!
+  firstName: String!
+  lastName: String!
+  country: String!
+  currency: String!
+  createdAt: Timestamp!
+  email: String
+  phoneNumber: String
+  bankName: String
+  accountNumber: String
+  swiftCode: String
+  address: String
+}
+
+type Transfer @table {
+  senderUser: User!
+  beneficiary: Beneficiary!
+  sendAmount: Float!
+  sendCurrency: String!
+  receiveAmount: Float!
+  receiveCurrency: String!
+  exchangeRate: Float!
+  fees: Float!
+  status: String!
+  createdAt: Timestamp!
+  transactionReference: String
+  purposeOfTransfer: String
+}
+
+type ExchangeRate @table {
+  baseCurrency: String!
+  targetCurrency: String!
+  rate: Float!
+  timestamp: Timestamp!
+}

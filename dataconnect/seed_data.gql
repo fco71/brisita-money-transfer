@@ -1,0 +1,88 @@
+mutation CreateSeedData @transaction @auth(level: USER, insecureReason: "This mutation is used to populate the database with initial data and is only used internally.") {
+  user_insertMany(data: [
+    {
+      id: "550e8400-e29b-41d4-a716-446655440000",
+      firstName: "Demo",
+      lastName: "User1",
+      email: "demouser1@example.com",
+      passwordHash: "hashed_password_1",
+      createdAt: "2024-01-01T00:00:00Z"
+    },
+    {
+      id: "550e8400-e29b-41d4-a716-446655440001",
+      firstName: "Demo",
+      lastName: "User2",
+      email: "demouser2@example.com",
+      passwordHash: "hashed_password_2",
+      createdAt: "2024-01-02T00:00:00Z"
+    }
+  ])
+  beneficiary_insertMany(data: [
+    {
+      id: "650e8400-e29b-41d4-a716-446655440000",
+      userId: "550e8400-e29b-41d4-a716-446655440000",
+      firstName: "Beneficiary",
+      lastName: "One",
+      email: "beneficiary1@example.com",
+      country: "US",
+      currency: "USD",
+      createdAt: "2024-01-03T00:00:00Z"
+    },
+    {
+      id: "650e8400-e29b-41d4-a716-446655440001",
+      userId: "550e8400-e29b-41d4-a716-446655440001",
+      firstName: "Beneficiary",
+      lastName: "Two",
+      email: "beneficiary2@example.com",
+      country: "CA",
+      currency: "CAD",
+      createdAt: "2024-01-04T00:00:00Z"
+    }
+  ])
+  account_insertMany(data: [
+    {
+      id: "750e8400-e29b-41d4-a716-446655440000",
+      userId: "550e8400-e29b-41d4-a716-446655440000",
+      accountNumber: "1234567890",
+      accountType: "Checking",
+      currency: "USD",
+      createdAt: "2024-01-05T00:00:00Z"
+    },
+    {
+      id: "750e8400-e29b-41d4-a716-446655440001",
+      userId: "550e8400-e29b-41d4-a716-446655440001",
+      accountNumber: "0987654321",
+      accountType: "Savings",
+      currency: "CAD",
+      createdAt: "2024-01-06T00:00:00Z"
+    }
+  ])
+  transfer_insertMany(data: [
+    {
+      id: "850e8400-e29b-41d4-a716-446655440000",
+      senderUserId: "550e8400-e29b-41d4-a716-446655440000",
+      beneficiaryId: "650e8400-e29b-41d4-a716-446655440000",
+      sendAmount: 100.00,
+      sendCurrency: "USD",
+      receiveAmount: 90.00,
+      receiveCurrency: "EUR",
+      exchangeRate: 0.90,
+      fees: 5.00,
+      status: "Completed",
+      createdAt: "2024-01-07T00:00:00Z"
+    },
+    {
+      id: "850e8400-e29b-41d4-a716-446655440001",
+      senderUserId: "550e8400-e29b-41d4-a716-446655440001",
+      beneficiaryId: "650e8400-e29b-41d4-a716-446655440001",
+      sendAmount: 200.00,
+      sendCurrency: "CAD",
+      receiveAmount: 140.00,
+      receiveCurrency: "GBP",
+      exchangeRate: 0.70,
+      fees: 10.00,
+      status: "Pending",
+      createdAt: "2024-01-08T00:00:00Z"
+    }
+  ])
+}
