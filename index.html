@@ -75,7 +75,15 @@
                             <label for="password">Password</label>
                             <input type="password" id="password" placeholder="••••••••" required>
                         </div>
-                        <button type="submit" class="btn-primary btn-large" id="auth-submit">Create Account</button>
+                        <button type="submit" class="btn-primary btn-large" id="auth-submit">
+                        <span class="btn-text">Create Account</span>
+                        <span class="btn-loading" style="display: none;">
+                            <svg class="spinner" viewBox="0 0 50 50">
+                                <circle class="path" cx="25" cy="25" r="20" fill="none" stroke-width="5"></circle>
+                            </svg>
+                            Creating...
+                        </span>
+                    </button>
                     </form>
                     <p class="auth-toggle">
                         <span id="toggle-text">Already have an account?</span>
@@ -185,6 +193,57 @@
                     </div>
                 </div>
             </section>
+        </div>
+
+        <!-- Confirmation Modal -->
+        <div id="confirmation-modal" class="modal" style="display: none;">
+            <div class="modal-backdrop"></div>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Confirm Transfer</h3>
+                    <button class="modal-close" onclick="closeConfirmationModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="confirmation-details">
+                        <div class="confirm-row">
+                            <span>From</span>
+                            <strong id="confirm-from-currency"></strong>
+                        </div>
+                        <div class="confirm-row">
+                            <span>To</span>
+                            <strong id="confirm-to-currency"></strong>
+                        </div>
+                        <div class="confirm-row">
+                            <span>Amount to Send</span>
+                            <strong id="confirm-send-amount"></strong>
+                        </div>
+                        <div class="confirm-row">
+                            <span>Recipient Gets</span>
+                            <strong class="text-success" id="confirm-receive-amount"></strong>
+                        </div>
+                        <div class="confirm-row">
+                            <span>Exchange Rate</span>
+                            <strong id="confirm-rate"></strong>
+                        </div>
+                        <div class="confirm-row">
+                            <span>Recipient Address</span>
+                            <strong id="confirm-address" class="text-small"></strong>
+                        </div>
+                        <div class="confirm-row total-row">
+                            <span>Total (incl. fees)</span>
+                            <strong id="confirm-total"></strong>
+                        </div>
+                    </div>
+                    <div class="modal-warning">
+                        <span>⚠️</span>
+                        <p>Please verify all details carefully. Cryptocurrency transactions cannot be reversed.</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-secondary" onclick="closeConfirmationModal()">Cancel</button>
+                    <button class="btn-primary" id="confirm-transfer-btn">Confirm & Send</button>
+                </div>
+            </div>
         </div>
     </div>
 
