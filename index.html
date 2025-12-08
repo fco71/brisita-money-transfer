@@ -4,6 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Brisita - International Money Transfer</title>
+    
+    <!-- Favicons -->
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="apple-touch-icon" sizes="180x180" href="favicon.svg">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Meta Tags -->
+    <meta name="description" content="Fast, secure blockchain-powered international money transfers with transparent pricing and low fees.">
+    <meta name="keywords" content="money transfer, cryptocurrency, blockchain, international payments, fintech">
+    <meta name="theme-color" content="#6366f1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Brisita">
+    
+    <!-- Fonts & Styles -->
     <link rel="stylesheet" href="styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -101,6 +118,10 @@
                     <p class="balance-label">Available Balance</p>
                     <h1 id="balance" class="balance-amount">$0.00</h1>
                     <p class="balance-currency">USD</p>
+                    <div class="wallet-section">
+                        <button id="wallet-connect-btn" class="btn-wallet">Connect Wallet</button>
+                        <div id="wallet-info" style="display: none;"></div>
+                    </div>
                 </div>
                 <div class="quick-stats">
                     <div class="stat">
@@ -157,7 +178,12 @@
 
                     <div class="input-group">
                         <label for="recipient-address">Recipient Wallet Address</label>
-                        <input type="text" id="recipient-address" placeholder="0x1234..." required>
+                        <div class="recipient-input-group">
+                            <input type="text" id="recipient-address" placeholder="0x1234..." required>
+                            <button type="button" class="btn-secondary btn-small" id="saved-wallets-btn">
+                                📋 Saved
+                            </button>
+                        </div>
                     </div>
 
                     <div class="fee-summary">
@@ -245,6 +271,25 @@
                 </div>
             </div>
         </div>
+
+        <!-- Saved Wallets Modal -->
+        <div id="wallets-modal" class="modal" style="display: none;">
+            <div class="modal-backdrop" onclick="closeSavedWalletsModal()"></div>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Saved Wallet Addresses</h3>
+                    <button class="modal-close" onclick="closeSavedWalletsModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="add-wallet-form">
+                        <input type="text" id="new-wallet-name" placeholder="Wallet name (e.g., John's Wallet)" class="wallet-input">
+                        <input type="text" id="new-wallet-address" placeholder="0x..." class="wallet-input">
+                        <button class="btn-primary btn-small" onclick="saveNewWallet()">+ Add Wallet</button>
+                    </div>
+                    <div id="saved-wallets-list" class="saved-wallets-list"></div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Firebase SDK -->
@@ -252,8 +297,12 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     
+    <!-- Web3.js for Blockchain Integration -->
+    <script src="https://cdn.jsdelivr.net/npm/web3@4.3.0/dist/web3.min.js"></script>
+    
     <!-- App Scripts -->
     <script src="firebase-config.js"></script>
+    <script src="blockchain.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

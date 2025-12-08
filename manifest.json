@@ -1,0 +1,20 @@
+{
+  "name": "Brisita - Money Transfer",
+  "short_name": "Brisita",
+  "description": "Fast, secure blockchain-powered international money transfers",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#6366f1",
+  "theme_color": "#6366f1",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["finance", "business"],
+  "screenshots": []
+}

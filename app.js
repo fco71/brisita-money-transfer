@@ -143,6 +143,20 @@ logoutBtn.addEventListener('click', async () => {
     }
 });
 
+// Wallet Connect Button
+document.addEventListener('DOMContentLoaded', () => {
+    const walletBtn = document.getElementById('wallet-connect-btn');
+    if (walletBtn) {
+        walletBtn.addEventListener('click', async () => {
+            if (blockchainConnected) {
+                disconnectWallet();
+            } else {
+                await connectWallet();
+            }
+        });
+    }
+});
+
 // Auth Form Submit
 authForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -553,12 +567,14 @@ updateExchangeCalculation = async function() {
 
 // Add keyboard shortcuts
 document.addEventListener('keydown', function(e) {
-    // Escape to close notifications
+    // Escape to close notifications and modals
     if (e.key === 'Escape') {
         document.querySelectorAll('.notification').forEach(n => {
             n.classList.remove('show');
             setTimeout(() => n.remove(), 300);
         });
+        closeConfirmationModal();
+        closeSavedWalletsModal();
     }
 });
 
@@ -568,6 +584,163 @@ document.getElementById('recipient-address')?.addEventListener('dblclick', funct
         this.value = '0x' + Array.from({length: 40}, () => 
             Math.floor(Math.random() * 16).toString(16)).join('');
         showNotification('Sample wallet address generated (for testing)', 'info');
+    }
+});
+
+// Saved Wallets Management
+let savedWallets = [];
+
+// Load saved wallets from Firestore
+async function loadSavedWallets() {
+    if (!currentUser) return;
+    
+    try {
+        const doc = await db.collection('users').doc(currentUser.uid).get();
+        if (doc.exists && doc.data().savedWallets) {
+            savedWallets = doc.data().savedWallets;
+        } else {
+            savedWallets = [];
+        }
+    } catch (error) {
+        console.error('Error loading saved wallets:', error);
+    }
+}
+
+// Show saved wallets modal
+async function showSavedWalletsModal() {
+    await loadSavedWallets();
+    const modal = document.getElementById('wallets-modal');
+    const list = document.getElementById('saved-wallets-list');
+    
+    if (savedWallets.length === 0) {
+        list.innerHTML = `
+            <div class="empty-wallets">
+                <p>No saved wallet addresses yet</p>
+                <span>Add your frequently used wallet addresses for quick access</span>
+            </div>
+        `;
+    } else {
+        list.innerHTML = savedWallets.map((wallet, index) => `
+            <div class="wallet-item" onclick="selectWallet('${wallet.address}')">
+                <div class="wallet-item-info">
+                    <div class="wallet-item-name">${wallet.name}</div>
+                    <div class="wallet-item-address">${wallet.address}</div>
+                </div>
+                <div class="wallet-item-actions">
+                    <button onclick="event.stopPropagation(); deleteWallet(${index})" class="delete-btn">Delete</button>
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
+// Close saved wallets modal
+function closeSavedWalletsModal() {
+    const modal = document.getElementById('wallets-modal');
+    modal.style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+
+// Save new wallet
+async function saveNewWallet() {
+    const name = document.getElementById('new-wallet-name').value.trim();
+    const address = document.getElementById('new-wallet-address').value.trim();
+    
+    if (!name || !address) {
+        showNotification('Please enter both name and address', 'error');
+        return;
+    }
+    
+    if (!address.startsWith('0x') || address.length < 42) {
+        showNotification('Invalid wallet address format', 'error');
+        return;
+    }
+    
+    savedWallets.push({ name, address });
+    
+    try {
+        await db.collection('users').doc(currentUser.uid).update({
+            savedWallets: savedWallets
+        });
+        
+        document.getElementById('new-wallet-name').value = '';
+        document.getElementById('new-wallet-address').value = '';
+        showNotification('Wallet saved successfully', 'success');
+        showSavedWalletsModal(); // Refresh list
+    } catch (error) {
+        console.error('Error saving wallet:', error);
+        showNotification('Error saving wallet', 'error');
+    }
+}
+
+// Select wallet from list
+function selectWallet(address) {
+    document.getElementById('recipient-address').value = address;
+    closeSavedWalletsModal();
+    showNotification('Wallet address selected', 'success');
+}
+
+// Delete wallet
+async function deleteWallet(index) {
+    if (!confirm('Delete this wallet address?')) return;
+    
+    savedWallets.splice(index, 1);
+    
+    try {
+        await db.collection('users').doc(currentUser.uid).update({
+            savedWallets: savedWallets
+        });
+        showNotification('Wallet deleted', 'success');
+        showSavedWalletsModal(); // Refresh list
+    } catch (error) {
+        console.error('Error deleting wallet:', error);
+        showNotification('Error deleting wallet', 'error');
+    }
+}
+
+// Saved wallets button click
+document.getElementById('saved-wallets-btn')?.addEventListener('click', () => {
+    showSavedWalletsModal();
+});
+
+// Register Service Worker for PWA
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js')
+            .then((registration) => {
+                console.log('Service Worker registered:', registration.scope);
+            })
+            .catch((error) => {
+                console.log('Service Worker registration failed:', error);
+            });
+    });
+}
+
+// PWA Install Prompt
+let deferredPrompt;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    
+    // Show install button if not already installed
+    const installBtn = document.getElementById('install-pwa-btn');
+    if (installBtn) {
+        installBtn.style.display = 'block';
+        installBtn.addEventListener('click', () => {
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then((choiceResult) => {
+                if (choiceResult.outcome === 'accepted') {
+                    console.log('PWA installed');
+                    showNotification('App installed successfully!', 'success');
+                }
+                deferredPrompt = null;
+                installBtn.style.display = 'none';
+            });
+        });
     }
 });
 
