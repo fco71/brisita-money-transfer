@@ -2,6 +2,11 @@
 let currentUser = null;
 let isLoginMode = false;
 
+// Chart instances
+let volumeChart = null;
+let currencyChart = null;
+let historyChart = null;
+
 // DOM Elements
 const authSection = document.getElementById('auth-section');
 const appSection = document.getElementById('app-section');
@@ -291,6 +296,7 @@ async function showConfirmationModal() {
             showNotification('Transfer initiated successfully!', 'success');
             loadTransactions();
             loadUserData();
+            updateCharts(); // Refresh charts with new transaction
         } catch (error) {
             console.error('Transfer error:', error);
             showNotification('Error processing transfer: ' + error.message, 'error');
@@ -361,6 +367,12 @@ async function loadUserData() {
             userAvatar.textContent = email.charAt(0).toUpperCase();
             balanceSpan.textContent = `$${userData.balance.toFixed(2)}`;
         }
+
+        // Initialize and update charts
+        if (!volumeChart) {
+            initializeCharts();
+        }
+        updateCharts();
     } catch (error) {
         console.error('Error loading user data:', error);
     }
@@ -743,5 +755,214 @@ window.addEventListener('beforeinstallprompt', (e) => {
         });
     }
 });
+
+// Chart Period Selector
+const chartPeriodSelect = document.getElementById('chart-period');
+if (chartPeriodSelect) {
+    chartPeriodSelect.addEventListener('change', () => {
+        if (currentUser) {
+            updateCharts();
+        }
+    });
+}
+
+// Analytics Chart Functions
+function initializeCharts() {
+    // Volume Chart (Doughnut)
+    const volumeCtx = document.getElementById('volumeChart');
+    if (volumeCtx) {
+        volumeChart = new Chart(volumeCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Sent', 'Received'],
+                datasets: [{
+                    data: [0, 0],
+                    backgroundColor: [
+                        'rgba(99, 102, 241, 0.8)',
+                        'rgba(139, 92, 246, 0.8)'
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 15,
+                            font: {
+                                size: 12
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Currency Distribution Chart (Pie)
+    const currencyCtx = document.getElementById('currencyChart');
+    if (currencyCtx) {
+        currencyChart = new Chart(currencyCtx, {
+            type: 'pie',
+            data: {
+                labels: [],
+                datasets: [{
+                    data: [],
+                    backgroundColor: [
+                        'rgba(99, 102, 241, 0.8)',
+                        'rgba(139, 92, 246, 0.8)',
+                        'rgba(236, 72, 153, 0.8)',
+                        'rgba(251, 146, 60, 0.8)',
+                        'rgba(34, 197, 94, 0.8)',
+                        'rgba(59, 130, 246, 0.8)'
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 15,
+                            font: {
+                                size: 12
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Transaction History Chart (Line)
+    const historyCtx = document.getElementById('historyChart');
+    if (historyCtx) {
+        historyChart = new Chart(historyCtx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Transaction Amount (USD)',
+                    data: [],
+                    borderColor: 'rgba(99, 102, 241, 1)',
+                    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            font: {
+                                size: 12
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value.toFixed(0);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+}
+
+async function updateCharts() {
+    if (!currentUser) return;
+
+    const period = parseInt(document.getElementById('chart-period')?.value || '30');
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - period);
+
+    try {
+        // Fetch transactions from the selected period
+        const q = firebase.firestore()
+            .collection('transactions')
+            .where('userId', '==', currentUser.uid)
+            .where('timestamp', '>=', firebase.firestore.Timestamp.fromDate(cutoffDate))
+            .orderBy('timestamp', 'asc');
+
+        const snapshot = await q.get();
+        const transactions = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+
+        // Update Volume Chart
+        if (volumeChart) {
+            const sent = transactions
+                .filter(tx => tx.type === 'sent')
+                .reduce((sum, tx) => sum + (tx.amount || 0), 0);
+            const received = transactions
+                .filter(tx => tx.type === 'received')
+                .reduce((sum, tx) => sum + (tx.amount || 0), 0);
+
+            volumeChart.data.datasets[0].data = [sent, received];
+            volumeChart.update();
+        }
+
+        // Update Currency Distribution Chart
+        if (currencyChart) {
+            const currencyMap = {};
+            transactions.forEach(tx => {
+                const currency = tx.toCurrency || tx.fromCurrency || 'USD';
+                currencyMap[currency] = (currencyMap[currency] || 0) + (tx.amount || 0);
+            });
+
+            currencyChart.data.labels = Object.keys(currencyMap);
+            currencyChart.data.datasets[0].data = Object.values(currencyMap);
+            currencyChart.update();
+        }
+
+        // Update Transaction History Chart
+        if (historyChart) {
+            // Group transactions by day
+            const dailyData = {};
+            transactions.forEach(tx => {
+                const date = tx.timestamp?.toDate();
+                if (date) {
+                    const dateKey = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                    dailyData[dateKey] = (dailyData[dateKey] || 0) + (tx.amount || 0);
+                }
+            });
+
+            // Fill in missing days with 0
+            const labels = [];
+            const data = [];
+            for (let i = period - 1; i >= 0; i--) {
+                const date = new Date();
+                date.setDate(date.getDate() - i);
+                const dateKey = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                labels.push(dateKey);
+                data.push(dailyData[dateKey] || 0);
+            }
+
+            historyChart.data.labels = labels;
+            historyChart.data.datasets[0].data = data;
+            historyChart.update();
+        }
+
+    } catch (error) {
+        console.error('Error updating charts:', error);
+    }
+}
 
 console.log('Brisita Money Transfer App initialized ✓');

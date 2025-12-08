@@ -135,6 +135,35 @@
                 </div>
             </section>
 
+            <!-- Analytics Section -->
+            <section class="analytics-section">
+                <div class="analytics-header">
+                    <h2 class="section-title">Analytics</h2>
+                    <div class="analytics-controls">
+                        <select id="chart-period" class="chart-period-select">
+                            <option value="7">Last 7 days</option>
+                            <option value="30" selected>Last 30 days</option>
+                            <option value="90">Last 90 days</option>
+                            <option value="365">Last year</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <h3 class="chart-title">Transaction Volume</h3>
+                        <canvas id="volumeChart"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h3 class="chart-title">Currency Distribution</h3>
+                        <canvas id="currencyChart"></canvas>
+                    </div>
+                    <div class="chart-card chart-card-full">
+                        <h3 class="chart-title">Transaction History</h3>
+                        <canvas id="historyChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
             <!-- Transfer Form -->
             <section class="transfer-card">
                 <h2 class="section-title">Send Money</h2>
@@ -299,6 +328,9 @@
     
     <!-- Web3.js for Blockchain Integration -->
     <script src="https://cdn.jsdelivr.net/npm/web3@4.3.0/dist/web3.min.js"></script>
+    
+    <!-- Chart.js for Analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     
     <!-- App Scripts -->
     <script src="firebase-config.js"></script>
