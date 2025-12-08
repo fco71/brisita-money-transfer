@@ -76,15 +76,114 @@ const step4RecAmount = document.getElementById("step4-rec-amount");
 const step4PlatformFee = document.getElementById("step4-platform-fee");
 const step4Buffer = document.getElementById("step4-buffer");
 
+// Partner selectors
+const localPartnerSelect = document.getElementById("local-partner");
+const destPartnerSelect = document.getElementById("dest-partner");
+const localPartnerNote = document.getElementById("local-partner-note");
+const destPartnerNote = document.getElementById("dest-partner-note");
+
+// Partner comparison container
+const partnerComparisonContainer =
+  document.getElementById("partner-comparison");
+
 // -----------------------------
-// Firebase handles (from firebase-config.js)
+// Firebase handles
 // -----------------------------
 const app = firebase.app();
 const auth = firebase.auth();
 const db = firebase.firestore();
 
 // -----------------------------
-// Exchange rates
+// Partner configuration (demo)
+// -----------------------------
+// Fee/Spread values are in *recipient currency* for demo purposes.
+const LOCAL_PARTNERS = {
+  bitcoinrd: {
+    id: "bitcoinrd",
+    name: "BitcoinRD",
+    spreadBps: 90, // 0.90%
+    feeFixed: 0.8,
+    note: "Local DOP specialist with ATM network.",
+  },
+  spectrocoin: {
+    id: "spectrocoin",
+    name: "SpectroCoin",
+    spreadBps: 70,
+    feeFixed: 0.6,
+    note: "Multi-currency exchange with DR coverage.",
+  },
+  internal: {
+    id: "internal",
+    name: "Brisita (internal)",
+    spreadBps: 50,
+    feeFixed: 0.4,
+    note: "Internal routing once licensed as an exchange.",
+  },
+};
+
+const DEST_PARTNERS = {
+  bitpanda: {
+    id: "bitpanda",
+    name: "Bitpanda",
+    spreadBps: 60,
+    feeFixed: 0.7,
+    note: "Retail-friendly EUR off-ramp with SEPA payouts.",
+  },
+  bvnk: {
+    id: "bvnk",
+    name: "BVNK",
+    spreadBps: 45,
+    feeFixed: 0.9,
+    note: "B2B stablecoin + fiat rails platform.",
+  },
+  internal: {
+    id: "internal",
+    name: "Brisita (internal)",
+    spreadBps: 40,
+    feeFixed: 0.5,
+    note: "Future internal EUR treasury & payout engine.",
+  },
+};
+
+// Predefined routes used in comparison card.
+// They all deliver the same recipient amount; only routes differ.
+const ROUTES = [
+  {
+    id: "standard",
+    label: "Standard route",
+    localPartnerId: "bitcoinrd",
+    destPartnerId: "bitpanda",
+    description: "Default DOP→BTC and BTC→EUR route.",
+    primary: true,
+  },
+  {
+    id: "alt-local",
+    label: "Alt local on-ramp",
+    localPartnerId: "spectrocoin",
+    destPartnerId: "bitpanda",
+    description: "Same EUR off-ramp, different local on-ramp.",
+    primary: false,
+  },
+  {
+    id: "alt-eur",
+    label: "Alt EUR off-ramp",
+    localPartnerId: "bitcoinrd",
+    destPartnerId: "bvnk",
+    description: "Same DOP partner, different EUR off-ramp.",
+    primary: false,
+  },
+  {
+    id: "internal",
+    label: "Brisita internal route",
+    localPartnerId: "internal",
+    destPartnerId: "internal",
+    description: "Future internal liquidity on both sides.",
+    primary: false,
+  },
+];
+
+// -----------------------------
+// Exchange rates (live via exchangerate.host)
 // -----------------------------
 let exchangeRates = {};
 let ratesLastUpdated = null;
@@ -94,12 +193,11 @@ const SUPPORTED_CURRENCIES = ["USD", "EUR", "GBP", "JPY", "CAD", "MXN", "DOP"];
 async function fetchExchangeRates() {
   try {
     const response = await fetch(
-      "https://api.exchangerate-api.com/v4/latest/USD"
+      "https://api.exchangerate.host/latest?base=USD"
     );
     const data = await response.json();
-    const rates = data.rates;
+    const rates = data.rates || {};
 
-    // Add DOP for demo if missing
     if (!rates.DOP) {
       rates.DOP = 60.0;
     }
@@ -111,9 +209,15 @@ async function fetchExchangeRates() {
         if (from === to) {
           exchangeRates[from][to] = 1;
         } else {
-          const fromToUsd = 1 / rates[from];
-          const usdToTo = rates[to];
-          exchangeRates[from][to] = fromToUsd * usdToTo;
+          const fromRate = rates[from];
+          const toRate = rates[to];
+          if (!fromRate || !toRate) {
+            exchangeRates[from][to] = 1;
+          } else {
+            const fromToUsd = 1 / fromRate;
+            const usdToTo = toRate;
+            exchangeRates[from][to] = fromToUsd * usdToTo;
+          }
         }
       });
     });
@@ -124,7 +228,6 @@ async function fetchExchangeRates() {
   } catch (error) {
     console.error("Error fetching exchange rates:", error);
 
-    // Minimal fallback if nothing
     if (Object.keys(exchangeRates).length === 0) {
       exchangeRates = {
         USD: {
@@ -144,11 +247,6 @@ async function fetchExchangeRates() {
         SUPPORTED_CURRENCIES.forEach((to) => {
           if (cur === to) {
             exchangeRates[cur][to] = 1;
-          } else if (
-            exchangeRates[cur] &&
-            typeof exchangeRates[cur][to] === "number"
-          ) {
-            // already set
           } else if (exchangeRates.USD && exchangeRates.USD[to]) {
             const fromToUsd =
               cur === "USD" ? 1 : 1 / (exchangeRates.USD[cur] || 1);
@@ -162,7 +260,6 @@ async function fetchExchangeRates() {
   }
 }
 
-// Periodic refresh
 setInterval(fetchExchangeRates, 10 * 60 * 1000);
 fetchExchangeRates();
 
@@ -214,19 +311,15 @@ function showNotification(message, type = "success") {
   }, 3000);
 }
 
-// Toggle login/signup mode
 function toggleAuthMode() {
-  // Single source of truth for flipping the mode
   isLoginMode = !isLoginMode;
 
   if (isLoginMode) {
-    // LOGIN mode
     authTitle.textContent = "Welcome Back";
     authSubmit.textContent = "Sign In";
     toggleText.textContent = "Don't have an account?";
     toggleAuth.textContent = "Get Started";
   } else {
-    // SIGN UP mode
     authTitle.textContent = "Get Started";
     authSubmit.textContent = "Create Account";
     toggleText.textContent = "Already have an account?";
@@ -238,14 +331,12 @@ function toggleAuthMode() {
 // Event listeners (auth)
 // -----------------------------
 loginBtn.addEventListener("click", () => {
-  // If we’re not already in login mode, switch to it
   if (!isLoginMode) {
     toggleAuthMode();
   }
 });
 
 signupBtn.addEventListener("click", () => {
-  // If we’re in login mode, switch back to signup
   if (isLoginMode) {
     toggleAuthMode();
   }
@@ -266,7 +357,6 @@ logoutBtn.addEventListener("click", async () => {
   }
 });
 
-// Auth form submit
 authForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   const email = document.getElementById("email").value.trim();
@@ -279,11 +369,9 @@ authForm.addEventListener("submit", async (e) => {
 
   try {
     if (isLoginMode) {
-      // LOGIN
       await auth.signInWithEmailAndPassword(email, password);
       console.log("User logged in");
     } else {
-      // SIGN UP
       const userCredential = await auth.createUserWithEmailAndPassword(
         email,
         password
@@ -291,7 +379,7 @@ authForm.addEventListener("submit", async (e) => {
 
       await db.collection("users").doc(userCredential.user.uid).set({
         email: email,
-        balance: 1000.0, // demo starter balance
+        balance: 1000.0,
         currency: "USD",
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       });
@@ -309,7 +397,7 @@ authForm.addEventListener("submit", async (e) => {
 });
 
 // -----------------------------
-// Wallet connect (blockchain.js)
+// Wallet connect
 // -----------------------------
 document.addEventListener("DOMContentLoaded", () => {
   if (walletConnectBtn) {
@@ -421,7 +509,6 @@ async function showConfirmationModal() {
         ),
       });
 
-      // Simulate blockchain confirmation
       setTimeout(async () => {
         await db.collection("transactions").doc(docRef.id).update({
           status: "completed",
@@ -461,6 +548,94 @@ cancelTransferBtn.addEventListener("click", closeConfirmationModal);
 closeConfirmationModalBtn.addEventListener("click", closeConfirmationModal);
 
 // -----------------------------
+// Corridor & pricing helpers
+// -----------------------------
+const CORRIDORS = [
+  {
+    id: "DOP-EUR",
+    from: "DOP",
+    to: "EUR",
+    localCode: "DOP",
+    localSymbol: "RD$",
+    recipientSymbol: "€",
+    demoRateLocalPer100Recipient: 7440, // 100 EUR ~ 7,440 DOP (demo)
+    demoBTCRateRecipient: 60000,
+    labelDeposit: "You fund your Brisita balance in Dominican pesos.",
+  },
+  {
+    id: "USD-EUR",
+    from: "USD",
+    to: "EUR",
+    localCode: "USD",
+    localSymbol: "$",
+    recipientSymbol: "€",
+    demoRateLocalPer100Recipient: 110, // 100 EUR ~ 110 USD (demo)
+    demoBTCRateRecipient: 60000,
+    labelDeposit: "You fund your Brisita balance in US dollars.",
+  },
+  {
+    id: "USD-DOP",
+    from: "USD",
+    to: "DOP",
+    localCode: "USD",
+    localSymbol: "$",
+    recipientSymbol: "RD$",
+    demoRateLocalPer100Recipient: 2, // 100 DOP ~ 2 USD (demo)
+    demoBTCRateRecipient: 60000,
+    labelDeposit: "You fund your Brisita balance in US dollars.",
+  },
+];
+
+function findCorridor(from, to) {
+  return CORRIDORS.find((c) => c.from === from && c.to === to) || null;
+}
+
+// Core pricing function used by both breakdown + comparison
+function computeRoutePricing(corridor, amount, localPartner, destPartner) {
+  const baseThirdPartyFeePerStep = 1.0; // base fee per leg (recipient currency)
+  const stepsCount = 3; // buy, transfer, sell
+  const platformFee = 2.0; // Brisita flat fee (recipient currency)
+  const volatilityBufferPercent = 0.01;
+
+  const combinedSpreadBps =
+    (localPartner.spreadBps + destPartner.spreadBps) / 10000;
+  const spreadAmount = amount * combinedSpreadBps;
+
+  const localExtraFee = localPartner.feeFixed;
+  const destExtraFee = destPartner.feeFixed;
+
+  const totalThirdPartyFees =
+    baseThirdPartyFeePerStep * stepsCount + localExtraFee + destExtraFee;
+
+  const buffer = amount * volatilityBufferPercent;
+
+  const requiredRecipient =
+    amount + spreadAmount + totalThirdPartyFees + platformFee + buffer;
+
+  const localPerUnitRecipient =
+    corridor.demoRateLocalPer100Recipient / 100.0;
+  const requiredLocal = requiredRecipient * localPerUnitRecipient;
+  const cryptoAmount =
+    requiredRecipient / corridor.demoBTCRateRecipient;
+
+  const step2Fee = baseThirdPartyFeePerStep + localExtraFee;
+  const step3Fee = baseThirdPartyFeePerStep + destExtraFee;
+
+  return {
+    requiredLocal,
+    requiredRecipient,
+    cryptoAmount,
+    step2Fee,
+    step3Fee,
+    platformFee,
+    buffer,
+    spreadAmount,
+    combinedSpreadBps,
+    totalThirdPartyFees,
+  };
+}
+
+// -----------------------------
 // Exchange calculation + breakdown
 // -----------------------------
 async function updateExchangeCalculation() {
@@ -483,7 +658,6 @@ async function updateExchangeCalculation() {
   updateTransferBreakdown();
 }
 
-// Multi-corridor demo breakdown
 function updateTransferBreakdown() {
   const fromCurrency = fromCurrencySelect.value;
   const toCurrency = toCurrencySelect.value;
@@ -498,45 +672,7 @@ function updateTransferBreakdown() {
     return;
   }
 
-  const corridors = [
-    {
-      id: "DOP-EUR",
-      from: "DOP",
-      to: "EUR",
-      localCode: "DOP",
-      localSymbol: "RD$",
-      recipientSymbol: "€",
-      demoRateLocalPer100Recipient: 7440, // 100 EUR -> 7,440 DOP
-      demoBTCRateRecipient: 60000,
-      labelDeposit: "You fund your Brisita balance in Dominican pesos.",
-    },
-    {
-      id: "USD-EUR",
-      from: "USD",
-      to: "EUR",
-      localCode: "USD",
-      localSymbol: "$",
-      recipientSymbol: "€",
-      demoRateLocalPer100Recipient: 110, // 100 EUR -> 110 USD (demo)
-      demoBTCRateRecipient: 60000,
-      labelDeposit: "You fund your Brisita balance in US dollars.",
-    },
-    {
-      id: "USD-DOP",
-      from: "USD",
-      to: "DOP",
-      localCode: "USD",
-      localSymbol: "$",
-      recipientSymbol: "RD$",
-      demoRateLocalPer100Recipient: 2, // 100 DOP -> ~2 USD (demo)
-      demoBTCRateRecipient: 60000,
-      labelDeposit: "You fund your Brisita balance in US dollars.",
-    },
-  ];
-
-  const corridor = corridors.find(
-    (c) => c.from === fromCurrency && c.to === toCurrency
-  );
+  const corridor = findCorridor(fromCurrency, toCurrency);
 
   if (!amount || !corridor) {
     step1LocalAmount.textContent = "RD$ 0.00";
@@ -551,47 +687,51 @@ function updateTransferBreakdown() {
     if (step1Label)
       step1Label.textContent =
         "You fund your Brisita balance in local currency.";
+    if (partnerComparisonContainer) {
+      partnerComparisonContainer.innerHTML = "";
+    }
     return;
   }
 
-  const thirdPartyFeePerStep = 1.0; // recipient currency
-  const stepsCount = 3; // buy, transfer, sell
-  const totalThirdPartyFees = thirdPartyFeePerStep * stepsCount;
+  const localPartner =
+    LOCAL_PARTNERS[localPartnerSelect?.value || "bitcoinrd"] ||
+    LOCAL_PARTNERS.bitcoinrd;
+  const destPartner =
+    DEST_PARTNERS[destPartnerSelect?.value || "bitpanda"] ||
+    DEST_PARTNERS.bitpanda;
 
-  const platformFee = 2.0; // recipient currency
-  const volatilityBufferPercent = 0.01;
-  const buffer = amount * volatilityBufferPercent;
+  if (localPartnerNote) localPartnerNote.textContent = localPartner.note;
+  if (destPartnerNote) destPartnerNote.textContent = destPartner.note;
 
-  const requiredRecipient =
-    amount + totalThirdPartyFees + platformFee + buffer;
+  const pricing = computeRoutePricing(
+    corridor,
+    amount,
+    localPartner,
+    destPartner
+  );
 
-  const localPerUnitRecipient =
-    corridor.demoRateLocalPer100Recipient / 100.0;
-  const requiredLocal = requiredRecipient * localPerUnitRecipient;
-  const cryptoAmount =
-    requiredRecipient / corridor.demoBTCRateRecipient;
+  const corrLocalSymbol = corridor.localSymbol;
+  const corrRecipientSymbol = corridor.recipientSymbol;
 
-  step1LocalAmount.textContent = `${corridor.localSymbol} ${requiredLocal.toFixed(
+  step1LocalAmount.textContent = `${corrLocalSymbol} ${pricing.requiredLocal.toFixed(
     2
   )}`;
-  step1LocalFee.textContent = `${corridor.localSymbol} 0.00`;
+  step1LocalFee.textContent = `${corrLocalSymbol} 0.00`;
 
-  step2CryptoAmount.textContent = `${cryptoAmount.toFixed(8)} BTC`;
-  step2CryptoFee.textContent = `${corridor.recipientSymbol} ${thirdPartyFeePerStep.toFixed(
-    2
-  )}`;
-
-  step3NetworkFee.textContent = `${corridor.recipientSymbol} ${thirdPartyFeePerStep.toFixed(
+  step2CryptoAmount.textContent = `${pricing.cryptoAmount.toFixed(8)} BTC`;
+  step2CryptoFee.textContent = `${corrRecipientSymbol} ${pricing.step2Fee.toFixed(
     2
   )}`;
 
-  step4RecAmount.textContent = `${corridor.recipientSymbol} ${amount.toFixed(
+  step3NetworkFee.textContent = `${corrRecipientSymbol} ${pricing.step3Fee.toFixed(
     2
   )}`;
-  step4PlatformFee.textContent = `${corridor.recipientSymbol} ${platformFee.toFixed(
+
+  step4RecAmount.textContent = `${corrRecipientSymbol} ${amount.toFixed(2)}`;
+  step4PlatformFee.textContent = `${corrRecipientSymbol} ${pricing.platformFee.toFixed(
     2
   )}`;
-  step4Buffer.textContent = `${corridor.recipientSymbol} ${buffer.toFixed(
+  step4Buffer.textContent = `${corrRecipientSymbol} ${pricing.buffer.toFixed(
     2
   )}`;
 
@@ -601,9 +741,147 @@ function updateTransferBreakdown() {
   if (step1Label) {
     step1Label.textContent = corridor.labelDeposit;
   }
+
+  updatePartnerComparison(corridor, amount, pricing.requiredLocal);
 }
 
+// Optional comparison: show different routes for same amount
+function updatePartnerComparison(corridor, amount, currentRequiredLocal) {
+  if (!partnerComparisonContainer) return;
+
+  if (!amount || !corridor) {
+    partnerComparisonContainer.innerHTML = "";
+    return;
+  }
+
+  const rows = [];
+  const corridorId = `${corridor.from}-${corridor.to}`;
+
+  // For corridors we don't explicitly want to compare, keep it simple.
+  const showComparisonFor =
+    corridorId === "DOP-EUR" || corridorId === "USD-EUR";
+  if (!showComparisonFor) {
+    partnerComparisonContainer.innerHTML = "";
+    return;
+  }
+
+  ROUTES.forEach((route) => {
+    const localPartner =
+      LOCAL_PARTNERS[route.localPartnerId] || LOCAL_PARTNERS.bitcoinrd;
+    const destPartner =
+      DEST_PARTNERS[route.destPartnerId] || DEST_PARTNERS.bitpanda;
+
+    const pricing = computeRoutePricing(corridor, amount, localPartner, destPartner);
+
+    rows.push({
+      route,
+      localPartner,
+      destPartner,
+      pricing,
+    });
+  });
+
+  const bestLocalCost = Math.min(
+    ...rows.map((r) => r.pricing.requiredLocal)
+  );
+
+  const headerHtml = `
+    <div class="partner-comparison-header">
+      <h4>Partner options for this transfer</h4>
+      <p>Optional · Switch route to see how required deposit and fees change.</p>
+    </div>
+    <div class="partner-comparison-table">
+      <div class="partner-comparison-row header">
+        <div>Route</div>
+        <div>Local deposit</div>
+        <div>vs. best</div>
+        <div></div>
+      </div>
+  `;
+
+  const rowsHtml = rows
+    .map((r) => {
+      const isPrimary = isCurrentRouteSelected(r.route);
+      const diff = r.pricing.requiredLocal - bestLocalCost;
+      let diffLabel = "Best price";
+      let diffClass = "partner-comparison-diff";
+
+      if (Math.abs(diff) < 0.01) {
+        diffLabel = "Best price";
+      } else if (diff > 0) {
+        diffLabel = `+${diff.toFixed(2)} ${corridor.localSymbol}`;
+        diffClass += " positive";
+      } else {
+        diffLabel = `${diff.toFixed(2)} ${corridor.localSymbol}`;
+        diffClass += " negative";
+      }
+
+      const buttonLabel = isPrimary ? "Selected" : "Use this route";
+
+      return `
+        <div class="partner-comparison-row data ${
+          isPrimary ? "primary" : ""
+        }" data-route-id="${r.route.id}">
+          <div class="partner-comparison-route">
+            <span>${r.route.label}</span>
+            <span>${r.localPartner.name} → ${r.destPartner.name}</span>
+          </div>
+          <div class="partner-comparison-cost">
+            ${corridor.localSymbol} ${r.pricing.requiredLocal.toFixed(2)}
+          </div>
+          <div class="${diffClass}">
+            ${diffLabel}
+          </div>
+          <div>
+            <button type="button" class="partner-comparison-btn">
+              ${buttonLabel}
+            </button>
+          </div>
+        </div>
+      `;
+    })
+    .join("");
+
+  partnerComparisonContainer.innerHTML = headerHtml + rowsHtml + "</div>";
+
+  // Attach click handlers to "Use this route"
+  const rowElements = partnerComparisonContainer.querySelectorAll(
+    ".partner-comparison-row.data"
+  );
+  rowElements.forEach((rowEl) => {
+    const routeId = rowEl.getAttribute("data-route-id");
+    const button = rowEl.querySelector(".partner-comparison-btn");
+    if (!routeId || !button) return;
+
+    button.addEventListener("click", () => {
+      const route = ROUTES.find((r) => r.id === routeId);
+      if (!route) return;
+
+      // Update partner dropdowns and recalc — this is the key UX piece:
+      // it's not an extra step, just an optional optimization.
+      if (localPartnerSelect) {
+        localPartnerSelect.value = route.localPartnerId;
+      }
+      if (destPartnerSelect) {
+        destPartnerSelect.value = route.destPartnerId;
+      }
+      updateExchangeCalculation();
+    });
+  });
+}
+
+function isCurrentRouteSelected(route) {
+  const currentLocal = localPartnerSelect?.value || "bitcoinrd";
+  const currentDest = destPartnerSelect?.value || "bitpanda";
+  return (
+    route.localPartnerId === currentLocal &&
+    route.destPartnerId === currentDest
+  );
+}
+
+// -----------------------------
 // Swap currencies
+// -----------------------------
 const swapBtn = document.getElementById("swap-currencies");
 if (swapBtn) {
   swapBtn.addEventListener("click", () => {
@@ -615,10 +893,17 @@ if (swapBtn) {
   });
 }
 
-// Recalculate when inputs change
 fromCurrencySelect.addEventListener("change", updateExchangeCalculation);
 toCurrencySelect.addEventListener("change", updateExchangeCalculation);
 amountInput.addEventListener("input", updateExchangeCalculation);
+
+// Recalculate when partner changes
+if (localPartnerSelect) {
+  localPartnerSelect.addEventListener("change", updateExchangeCalculation);
+}
+if (destPartnerSelect) {
+  destPartnerSelect.addEventListener("change", updateExchangeCalculation);
+}
 
 // -----------------------------
 // Load user data

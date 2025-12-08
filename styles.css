@@ -538,6 +538,197 @@ main {
   margin-top: 8px;
 }
 
+/* Providers row with logos */
+
+.providers-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 4px 0 12px;
+}
+
+.partner-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.5);
+}
+
+.partner-logo {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  background: radial-gradient(circle at top, #0f172a, #020617);
+  border: 1px solid rgba(148, 163, 184, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.partner-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.partner-logo .partner-initials {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #e5e7eb;
+  background: none;
+}
+
+/* Color accents when using initials only */
+.logo-bitcoinrd {
+  background: radial-gradient(circle at top, #f97316, #9a3412);
+}
+
+.logo-bitpanda {
+  background: radial-gradient(circle at top, #22c55e, #166534);
+}
+
+.partner-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.partner-meta label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.partner-meta select {
+  font-size: 0.8rem;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.6);
+  background: rgba(15, 23, 42, 0.95);
+  color: var(--text-main);
+}
+
+.partner-note {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+/* Partner comparison (optional) */
+
+.partner-comparison {
+  margin: 4px 0 12px;
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px dashed rgba(148, 163, 184, 0.5);
+}
+
+.partner-comparison-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.partner-comparison-header h4 {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.partner-comparison-header p {
+  margin: 0;
+  font-size: 0.74rem;
+  color: var(--text-muted);
+}
+
+.partner-comparison-table {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.75rem;
+}
+
+.partner-comparison-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1.1fr) minmax(0, 0.9fr) auto;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  border-radius: 999px;
+}
+
+.partner-comparison-row.header {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.partner-comparison-row.data {
+  background: rgba(15, 23, 42, 0.95);
+}
+
+.partner-comparison-row.data.primary {
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.6);
+}
+
+.partner-comparison-route {
+  display: flex;
+  flex-direction: column;
+}
+
+.partner-comparison-route span:first-child {
+  font-weight: 500;
+}
+
+.partner-comparison-route span:last-child {
+  color: var(--text-muted);
+}
+
+.partner-comparison-cost {
+  font-variant-numeric: tabular-nums;
+}
+
+.partner-comparison-diff {
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+
+.partner-comparison-diff.negative {
+  color: #22c55e;
+}
+
+.partner-comparison-diff.positive {
+  color: #f97373;
+}
+
+.partner-comparison-btn {
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.6);
+  background: transparent;
+  padding: 3px 8px;
+  font-size: 0.72rem;
+  color: var(--text-main);
+  cursor: pointer;
+}
+
+.partner-comparison-row.primary .partner-comparison-btn {
+  border-color: rgba(34, 197, 94, 0.9);
+  color: #22c55e;
+}
+
+/* Steps */
+
 .flow-steps {
   list-style: none;
   padding: 0;

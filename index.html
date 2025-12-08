@@ -215,7 +215,7 @@
             </label>
 
             <div class="meta-row">
-              <span>Exchange rate</span>
+              <span>Exchange rate (live)</span>
               <span id="exchange-rate">1.0000</span>
             </div>
 
@@ -270,6 +270,52 @@
             <span class="tag tag-demo">Demo flow · Simulated</span>
           </div>
 
+          <!-- CANDIDATE PROVIDERS WITH LOGOS -->
+          <div class="providers-row">
+            <div class="partner-card">
+              <div class="partner-logo logo-bitcoinrd">
+                <!-- Replace with real logo if you have it -->
+                <!-- <img src="assets/bitcoinrd.svg" alt="BitcoinRD" /> -->
+                <span class="partner-initials">BR</span>
+              </div>
+              <div class="partner-meta">
+                <label for="local-partner">DOP on-ramp (primary)</label>
+                <select id="local-partner">
+                  <option value="bitcoinrd">BitcoinRD</option>
+                  <option value="spectrocoin">SpectroCoin</option>
+                  <option value="internal">Brisita (internal)</option>
+                </select>
+                <small id="local-partner-note" class="partner-note">
+                  Local DOP specialist with ATM network.
+                </small>
+              </div>
+            </div>
+
+            <div class="partner-card">
+              <div class="partner-logo logo-bitpanda">
+                <!-- Replace with real logo if you have it -->
+                <!-- <img src="assets/bitpanda.svg" alt="Bitpanda" /> -->
+                <span class="partner-initials">BP</span>
+              </div>
+              <div class="partner-meta">
+                <label for="dest-partner">EUR off-ramp (primary)</label>
+                <select id="dest-partner">
+                  <option value="bitpanda">Bitpanda</option>
+                  <option value="bvnk">BVNK</option>
+                  <option value="internal">Brisita (internal)</option>
+                </select>
+                <small id="dest-partner-note" class="partner-note">
+                  Low-fee SEPA payouts in EUR.
+                </small>
+              </div>
+            </div>
+          </div>
+
+          <!-- OPTIONAL PARTNER COMPARISON -->
+          <div id="partner-comparison" class="partner-comparison">
+            <!-- Filled by JS -->
+          </div>
+
           <ol class="flow-steps">
             <li class="flow-step">
               <div class="flow-step-header">
@@ -287,7 +333,7 @@
                 <div class="step-row">
                   <span
                     class="has-tooltip"
-                    data-tooltip="This is the amount you must load in your local currency so the recipient can get the full amount after all crypto steps and fees."
+                    data-tooltip="This is the amount you must load in your local currency so the recipient can get the full amount after all crypto steps, spreads and fees."
                   >
                     Amount you deposit
                   </span>
@@ -311,8 +357,8 @@
                 <div>
                   <h4>Convert local → crypto</h4>
                   <p class="step-label">
-                    We buy BTC/USDC with your local currency via a regulated
-                    exchange.
+                    We buy BTC/USDC with your local currency via the selected
+                    DOP on-ramp partner.
                   </p>
                 </div>
               </div>
@@ -329,7 +375,7 @@
                 <div class="step-row muted">
                   <span
                     class="has-tooltip"
-                    data-tooltip="Commission paid to the local exchange for buying crypto on your behalf. In this demo we use a simple flat fee."
+                    data-tooltip="Commission paid to the local exchange for buying crypto on your behalf. Different partners can charge different spreads and fees."
                   >
                     Exchange fee
                   </span>
@@ -344,8 +390,8 @@
                 <div>
                   <h4>On-chain transfer</h4>
                   <p class="step-label">
-                    We send crypto across the blockchain to our partner in the
-                    destination country.
+                    We send crypto across the blockchain to our EUR payout
+                    partner.
                   </p>
                 </div>
               </div>
@@ -353,9 +399,9 @@
                 <div class="step-row">
                   <span
                     class="has-tooltip"
-                    data-tooltip="Network fees (gas) paid to validators/miners so the transfer is processed on-chain. These are usually small and depend on the blockchain used."
+                    data-tooltip="Network fees (gas) plus any routing fee charged by the EUR off-ramp partner to receive crypto on-chain."
                   >
-                    Network / gas fee
+                    Network / partner fee
                   </span>
                   <span id="step3-network-fee">€ 0.00</span>
                 </div>
@@ -368,8 +414,8 @@
                 <div>
                   <h4>Crypto → payout</h4>
                   <p class="step-label">
-                    Our partner converts the crypto back to local currency and
-                    sends it to the recipient.
+                    The EUR off-ramp converts crypto back to fiat and pays out
+                    to the recipient’s account.
                   </p>
                 </div>
               </div>
@@ -408,8 +454,8 @@
           <div class="flow-footer">
             <div class="flow-note">
               <strong>Heads up:</strong> This is a simulated demo flow. In
-              production, every value updates in real-time based on partner
-              fees, live crypto prices, and FX spreads.
+              production, every value updates from partner APIs, live FX, and
+              your own internal pricing engine.
             </div>
           </div>
         </section>
@@ -494,8 +540,7 @@
           Cancel
         </button>
         <button type="button" class="btn" id="confirm-transfer-btn">
-          Confirm &amp; Send
-        </button>
+          Confirm &amp; Send</button>
       </div>
     </div>
   </div>
@@ -503,7 +548,6 @@
   <!-- NOTIFICATION TOAST -->
   <div id="notification" class="notification"></div>
 
-  <!-- SCRIPTS -->
   <!-- Firebase (compat libraries) -->
   <script src="https://www.gstatic.com/firebasejs/9.6.11/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.11/firebase-auth-compat.js"></script>
